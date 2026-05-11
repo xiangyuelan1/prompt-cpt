@@ -1,14 +1,17 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Swords, BookOpen, BarChart3, User } from 'lucide-react';
+import { Trophy, Swords, BookOpen, BarChart3, User, Zap } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useAuth } from '../../contexts/AuthContext';
 
 export const Header: React.FC = () => {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   
   const navItems = [
     { path: '/', label: '首页', icon: Swords },
     { path: '/challenges', label: '挑战', icon: Trophy },
+    { path: '/battle', label: '对战', icon: Zap },
     { path: '/templates', label: '模板库', icon: BookOpen },
     { path: '/leaderboard', label: '排行榜', icon: BarChart3 },
   ];
@@ -26,7 +29,7 @@ export const Header: React.FC = () => {
             </span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-2">
+          <nav className="hidden lg:flex items-center gap-2">
             {navItems.map(({ path, label, icon: Icon }) => {
               const isActive = location.pathname === path || 
                 (path !== '/' && location.pathname.startsWith(path));
@@ -50,13 +53,24 @@ export const Header: React.FC = () => {
             })}
           </nav>
 
-          <Link
-            to="/profile"
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-100 hover:bg-primary-500/20 transition-all duration-300"
-          >
-            <User className="w-5 h-5 text-primary-400" />
-            <span className="hidden sm:inline text-gray-300">个人中心</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            {!isAuthenticated ? (
+              <Link
+                to="/auth"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary-500 to-accent-purple text-white font-semibold hover:shadow-lg hover:shadow-primary-500/30 transition-all duration-300"
+              >
+                登录 / 注册
+              </Link>
+            ) : (
+              <Link
+                to="/profile"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-100 hover:bg-primary-500/20 transition-all duration-300"
+              >
+                <User className="w-5 h-5 text-primary-400" />
+                <span className="hidden sm:inline text-gray-300">个人中心</span>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </header>

@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Send, RefreshCw, Eye, Code, Copy, Check, Sparkles, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Send, RefreshCw, Eye, Code, Copy, Check, Sparkles, TrendingUp, Save } from 'lucide-react';
 import { PageContainer } from '../components/layout/PageContainer';
 import { useStore } from '../store/useStore';
+import { aiService } from '../services/aiService';
+import { useAuth } from '../contexts/AuthContext';
 import { clsx } from 'clsx';
 
 export const EditorPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { challenges, addSubmission, generatePreview, calculateAIScore, currentUser } = useStore();
+  const { challenges, addSubmission } = useStore();
+  const { user, isAuthenticated } = useAuth();
   
   const challenge = challenges.find(c => c.id === id);
   
@@ -25,12 +28,21 @@ export const EditorPage: React.FC = () => {
     total: number;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [previewMode, setPreviewMode] = useState<'real' | 'mock'>('real');
+
+  useEffect(() => {
+    const savedDraft = localStorage.getItem(`draft-${id}`);
+    if (savedDraft) {
+      setPrompt(savedDraft);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (challenge && prompt.length > 10) {
+      localStorage.setItem(`draft-${id}`, prompt);
       const timer = setTimeout(() => {
         handlePreview();
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   }, [prompt, challenge]);
@@ -39,45 +51,84 @@ export const EditorPage: React.FC = () => {
     if (!challenge || prompt.length < 10) return;
     
     setIsGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
     
-    const newPreview = generatePreview(prompt, challenge.category);
-    setPreview(newPreview);
-    
-    const aiScore = calculateAIScore(prompt, newPreview);
-    setEstimatedScore({
-      clarity: Math.random() * 20 + 80,
-      creativity: Math.random() * 20 + 80,
-      practicality: Math.random() * 30 + 70,
-      total: aiScore
-    });
-    
-    setShowScore(true);
-    setIsGenerating(false);
+    try {
+      if (previewMode === 'real') {
+        const response = await aiService.generatePreview(prompt, challenge.category);
+        setPreview(response.text);
+        
+        const score = await aiService.scorePrompt(prompt, response.text);
+        setEstimatedScore(score);
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const mockPreview = await useStore.getState().generatePreview(prompt, challenge.category);
+        setPreview(mockPreview);
+        
+        const mockScore = useStore.getState().calculateAIScore(prompt, mockPreview);
+        setEstimatedScore({
+          clarity: mockScore * 0.3,
+          creativity: mockScore * 0.3,
+          practicality: mockScore * 0.4,
+          total: mockScore
+        });
+      }
+      
+      setShowScore(true);
+    } catch (error) {
+      console.error('Preview generation failed:', error);
+      const fallbackPreview = await useStore.getState().generatePreview(prompt, challenge.category);
+      setPreview(fallbackPreview);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleSubmit = async () => {
-    if (!challenge || !currentUser || prompt.length < 10) return;
+    if (!isAuthenticated) {
+      alert('请先登录后再提交作品');
+      navigate('/auth');
+      return;
+    }
+
+    if (!challenge || !user || prompt.length < 10) return;
     
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    addSubmission({
-      challengeId: challenge.id,
-      userId: currentUser.id,
-      prompt,
-      preview,
-      scores: {
-        aiScore: estimatedScore?.total || 75,
-        communityScore: 0,
-        totalScore: estimatedScore?.total || 75
-      },
-      votes: 0,
-      rank: 1
-    });
+    try {
+      let finalPreview = preview;
+      let finalScore = estimatedScore;
 
-    setIsSubmitting(false);
-    navigate(`/challenges/${challenge.id}`);
+      if (!preview || !estimatedScore) {
+        const response = await aiService.generatePreview(prompt, challenge.category);
+        finalPreview = response.text;
+        finalScore = await aiService.scorePrompt(prompt, response.text);
+      }
+
+      const submissionData = {
+        challengeId: challenge.id,
+        userId: user.id,
+        prompt,
+        preview: finalPreview,
+        scores: {
+          aiScore: finalScore?.total || 75,
+          communityScore: 0,
+          totalScore: finalScore?.total || 75
+        },
+        votes: 0,
+        rank: 1
+      };
+
+      addSubmission(submissionData);
+
+      localStorage.removeItem(`draft-${id}`);
+      
+      navigate(`/challenges/${challenge.id}`);
+    } catch (error) {
+      console.error('Submission failed:', error);
+      alert('提交失败，请重试');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCopy = () => {
@@ -102,7 +153,7 @@ export const EditorPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-dark-200 pt-20">
       <div className="container mx-auto px-6 py-8">
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
           <Link
             to={`/challenges/${id}`}
             className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
@@ -111,9 +162,38 @@ export const EditorPage: React.FC = () => {
             返回挑战详情
           </Link>
 
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-dark-100 rounded-lg p-1">
+              <button
+                onClick={() => setPreviewMode('real')}
+                className={clsx(
+                  'px-4 py-2 rounded-md text-sm font-medium transition-all',
+                  previewMode === 'real'
+                    ? 'bg-primary-500 text-white'
+                    : 'text-gray-400 hover:text-white'
+                )}
+              >
+                🤖 AI真实预览
+              </button>
+              <button
+                onClick={() => setPreviewMode('mock')}
+                className={clsx(
+                  'px-4 py-2 rounded-md text-sm font-medium transition-all',
+                  previewMode === 'mock'
+                    ? 'bg-primary-500 text-white'
+                    : 'text-gray-400 hover:text-white'
+                )}
+              >
+                ⚡ 快速预览
+              </button>
+            </div>
+          </div>
+
           <div className="text-right">
             <h1 className="text-2xl font-bold text-white">{challenge.title}</h1>
-            <p className="text-gray-400 text-sm">实时预览 · 边写边测</p>
+            <p className="text-gray-400 text-sm">
+              {previewMode === 'real' ? '🤖 AI生成 · 真实效果' : '⚡ 模拟生成 · 快速预览'}
+            </p>
           </div>
         </div>
 
@@ -149,28 +229,39 @@ export const EditorPage: React.FC = () => {
                 <div className="text-sm text-gray-400">
                   {prompt.length} 字符
                 </div>
-                <button
-                  onClick={handlePreview}
-                  disabled={prompt.length < 10 || isGenerating}
-                  className={clsx(
-                    'flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300',
-                    prompt.length >= 10
-                      ? 'bg-primary-500 hover:bg-primary-600 text-white hover:shadow-lg hover:shadow-primary-500/30'
-                      : 'bg-dark-300 text-gray-500 cursor-not-allowed'
-                  )}
-                >
-                  {isGenerating ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      生成中...
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="w-4 h-4" />
-                      预览效果
-                    </>
-                  )}
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      localStorage.setItem(`draft-${id}`, prompt);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-300 hover:bg-accent-gold/20 text-gray-400 hover:text-accent-gold transition-all"
+                  >
+                    <Save className="w-4 h-4" />
+                    保存草稿
+                  </button>
+                  <button
+                    onClick={handlePreview}
+                    disabled={prompt.length < 10 || isGenerating}
+                    className={clsx(
+                      'flex items-center gap-2 px-6 py-2 rounded-xl font-semibold transition-all duration-300',
+                      prompt.length >= 10
+                        ? 'bg-primary-500 hover:bg-primary-600 text-white hover:shadow-lg hover:shadow-primary-500/30'
+                        : 'bg-dark-300 text-gray-500 cursor-not-allowed'
+                    )}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        生成中...
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-4 h-4" />
+                        预览效果
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -185,6 +276,11 @@ export const EditorPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Eye className="w-5 h-5 text-accent-emerald" />
                   <span className="text-white font-semibold">实时预览输出</span>
+                  {previewMode === 'real' && (
+                    <span className="ml-2 px-2 py-0.5 rounded-full bg-accent-emerald/20 text-accent-emerald text-xs">
+                      AI生成
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -193,7 +289,7 @@ export const EditorPage: React.FC = () => {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="bg-dark-200 rounded-xl p-6 min-h-80"
+                    className="bg-dark-200 rounded-xl p-6 min-h-80 overflow-auto"
                   >
                     <pre className="text-gray-300 whitespace-pre-wrap font-mono text-sm leading-relaxed">
                       {preview}
@@ -204,6 +300,11 @@ export const EditorPage: React.FC = () => {
                     <div className="text-center">
                       <Sparkles className="w-12 h-12 text-gray-600 mx-auto mb-3" />
                       <p className="text-gray-400">开始编写提示词，实时预览效果</p>
+                      {previewMode === 'real' && (
+                        <p className="text-gray-500 text-sm mt-2">
+                          使用真实AI生成，效果更准确
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -219,6 +320,9 @@ export const EditorPage: React.FC = () => {
                 <div className="flex items-center gap-3 mb-6">
                   <TrendingUp className="w-5 h-5 text-accent-gold" />
                   <span className="text-white font-semibold">预估评分</span>
+                  <span className="ml-auto text-xs text-gray-400">
+                    {previewMode === 'real' ? '基于AI真实评估' : '基于模拟评估'}
+                  </span>
                 </div>
 
                 <div className="space-y-4">
@@ -279,12 +383,20 @@ export const EditorPage: React.FC = () => {
               </motion.div>
             )}
 
+            {!isAuthenticated && (
+              <div className="bg-accent-gold/10 border border-accent-gold/30 rounded-xl p-4">
+                <p className="text-accent-gold text-sm text-center">
+                  请先登录后再提交作品
+                </p>
+              </div>
+            )}
+
             <button
               onClick={handleSubmit}
-              disabled={prompt.length < 10 || isSubmitting}
+              disabled={prompt.length < 10 || isSubmitting || !isAuthenticated}
               className={clsx(
                 'w-full flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-lg transition-all duration-300',
-                prompt.length >= 10 && !isSubmitting
+                prompt.length >= 10 && isAuthenticated && !isSubmitting
                   ? 'bg-gradient-to-r from-accent-emerald to-primary-500 hover:shadow-lg hover:shadow-accent-emerald/30 text-white transform hover:scale-105'
                   : 'bg-dark-300 text-gray-500 cursor-not-allowed'
               )}

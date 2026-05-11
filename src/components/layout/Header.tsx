@@ -1,17 +1,18 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Swords, BookOpen, BarChart3, User, Zap } from 'lucide-react';
+import { Trophy, Swords, BookOpen, BarChart3, User, Zap, Settings, BookMarked } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 
 export const Header: React.FC = () => {
   const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   
   const navItems = [
     { path: '/', label: '首页', icon: Swords },
-    { path: '/challenges', label: '挑战', icon: Trophy },
-    { path: '/battle', label: '对战', icon: Zap },
+    { path: '/challenges', label: '题库', icon: BookMarked },
+    { path: '/knowledge', label: '知识树', icon: BookOpen },
+    { path: '/battle', label: '真人PK', icon: Zap },
     { path: '/templates', label: '模板库', icon: BookOpen },
     { path: '/leaderboard', label: '排行榜', icon: BarChart3 },
   ];
@@ -54,6 +55,16 @@ export const Header: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-3">
+            {isAuthenticated && user?.email === 'admin@admin' && (
+              <Link
+                to="/admin"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-gold/20 hover:bg-accent-gold/30 text-accent-gold transition-all duration-300"
+              >
+                <Settings className="w-5 h-5" />
+                <span className="hidden sm:inline">管理</span>
+              </Link>
+            )}
+
             {!isAuthenticated ? (
               <Link
                 to="/auth"
@@ -66,8 +77,10 @@ export const Header: React.FC = () => {
                 to="/profile"
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-dark-100 hover:bg-primary-500/20 transition-all duration-300"
               >
-                <User className="w-5 h-5 text-primary-400" />
-                <span className="hidden sm:inline text-gray-300">个人中心</span>
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-purple flex items-center justify-center text-lg">
+                  {user.avatar}
+                </div>
+                <span className="hidden sm:inline text-gray-300">{user.username}</span>
               </Link>
             )}
           </div>

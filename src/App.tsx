@@ -13,43 +13,54 @@ import { AdminSettingsPage } from "./pages/AdminSettings";
 import { KnowledgeTreePage } from "./pages/KnowledgeTree";
 import { QuestionDetailPage } from "./pages/QuestionDetail";
 import { CreateQuestionPage } from "./pages/CreateQuestion";
+import { CoursesPage } from "./pages/Courses";
+import { CourseDetailPage } from "./pages/CourseDetail";
+import { EnterpriseDashboardPage } from "./pages/EnterpriseDashboard";
+import { ExamPage } from "./pages/ExamPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import { BattleProvider } from "./contexts/BattleContext";
 import { QuestionProvider } from "./contexts/QuestionContext";
+import { CourseProvider } from "./contexts/CourseContext";
 
 function App() {
   return (
     <AuthProvider>
       <QuestionProvider>
         <BattleProvider>
-          <Router>
-            <div className="min-h-screen bg-dark-200">
-              <Routes>
-                <Route path="/auth" element={<><Header /><AuthPage /></>} />
-                <Route path="/*" element={
-                  <>
-                    <Header />
-                    <Routes>
-                      <Route path="/" element={<HomePage />} />
-                      <Route path="/challenges" element={<ChallengesPage />} />
-                      <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
-                      <Route path="/challenges/:id/editor" element={<EditorPage />} />
-                      <Route path="/templates" element={<TemplatesPage />} />
-                      <Route path="/leaderboard" element={<LeaderboardPage />} />
-                      <Route path="/profile" element={<ProfilePage />} />
-                      <Route path="/battle" element={<BattlePage />} />
-                      <Route path="/admin" element={<AdminSettingsPage />} />
-                      <Route path="/knowledge" element={<KnowledgeTreePage />} />
-                      <Route path="/questions" element={<ChallengesPage />} />
-                      <Route path="/questions/create" element={<CreateQuestionPage />} />
-                      <Route path="/questions/:id" element={<QuestionDetailPage />} />
-                      <Route path="/editor/:id" element={<EditorPage />} />
-                    </Routes>
-                  </>
-                } />
-              </Routes>
-            </div>
-          </Router>
+          <CourseProvider>
+            <Router>
+              <div className="min-h-screen bg-dark-200">
+                <Routes>
+                  <Route path="/auth" element={<><Header /><AuthPage /></>} />
+                  <Route path="/*" element={
+                    <>
+                      <Header />
+                      <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/courses" element={<CoursesPage />} />
+                        <Route path="/courses/:courseId" element={<CourseDetailPage />} />
+                        <Route path="/exams/:examId" element={<ExamPage />} />
+                        <Route path="/enterprise" element={<EnterpriseDashboardPage />} />
+                        <Route path="/challenges" element={<ChallengesPage />} />
+                        <Route path="/challenges/:id" element={<ChallengeDetailPage />} />
+                        <Route path="/challenges/:id/editor" element={<EditorPage />} />
+                        <Route path="/templates" element={<TemplatesPage />} />
+                        <Route path="/leaderboard" element={<LeaderboardPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                        <Route path="/battle" element={<BattlePage />} />
+                        <Route path="/admin" element={<AdminSettingsPage />} />
+                        <Route path="/knowledge" element={<KnowledgeTreePage />} />
+                        <Route path="/questions" element={<ChallengesPage />} />
+                        <Route path="/questions/create" element={<CreateQuestionPage />} />
+                        <Route path="/questions/:id" element={<QuestionDetailPage />} />
+                        <Route path="/editor/:id" element={<EditorPage />} />
+                      </Routes>
+                    </>
+                  } />
+                </Routes>
+              </div>
+            </Router>
+          </CourseProvider>
         </BattleProvider>
       </QuestionProvider>
     </AuthProvider>

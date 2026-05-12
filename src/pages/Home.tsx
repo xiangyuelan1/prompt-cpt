@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Trophy, Clock, Users, TrendingUp, ArrowRight, Zap, Star, Swords } from 'lucide-react';
+import { Trophy, Clock, Users, TrendingUp, ArrowRight, Zap, Star, Swords, GraduationCap, Building, BookOpen } from 'lucide-react';
 import { PageContainer } from '../components/layout/PageContainer';
 import { useStore } from '../store/useStore';
 import dayjs from 'dayjs';
@@ -48,7 +48,14 @@ export const HomePage: React.FC = () => {
             在这里，通过竞技挑战提升你的提示词技巧，与全球创作者一较高下
           </p>
 
-          <div className="flex gap-4 justify-center">
+          <div className="flex flex-wrap gap-4 justify-center mb-8">
+            <Link
+              to="/courses"
+              className="px-8 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:shadow-lg hover:shadow-green-500/30 transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
+            >
+              <GraduationCap className="w-5 h-5" />
+              课程中心
+            </Link>
             <Link
               to="/challenges"
               className="px-8 py-4 rounded-xl bg-gradient-to-r from-primary-500 to-accent-purple text-white font-semibold hover:shadow-lg hover:shadow-primary-500/30 transform hover:scale-105 transition-all duration-300 flex items-center gap-2"
@@ -57,11 +64,50 @@ export const HomePage: React.FC = () => {
               开始挑战
             </Link>
             <Link
-              to="/templates"
-              className="px-8 py-4 rounded-xl bg-dark-100 border border-primary-500/30 text-white font-semibold hover:bg-primary-500/10 transition-all duration-300 flex items-center gap-2"
+              to="/enterprise"
+              className="px-8 py-4 rounded-xl bg-dark-100 border border-blue-500/30 text-white font-semibold hover:bg-blue-500/10 transition-all duration-300 flex items-center gap-2"
             >
-              <Star className="w-5 h-5" />
-              浏览模板
+              <Building className="w-5 h-5" />
+              企业服务
+            </Link>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Link
+              to="/courses"
+              className="group bg-dark-300 rounded-xl p-6 border border-dark-400 hover:border-primary hover:shadow-lg transition-all"
+            >
+              <GraduationCap className="w-10 h-10 text-primary mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors">
+                教育培训
+              </h3>
+              <p className="text-gray-400 text-sm">
+                系统学习提示词工程，从入门到精通，快速提升AI应用能力
+              </p>
+            </Link>
+            <Link
+              to="/enterprise"
+              className="group bg-dark-300 rounded-xl p-6 border border-dark-400 hover:border-blue-400 hover:shadow-lg transition-all"
+            >
+              <Building className="w-10 h-10 text-blue-400 mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors">
+                企业服务
+              </h3>
+              <p className="text-gray-400 text-sm">
+                企业级培训解决方案，提升团队AI应用能力
+              </p>
+            </Link>
+            <Link
+              to="/challenges"
+              className="group bg-dark-300 rounded-xl p-6 border border-dark-400 hover:border-purple-400 hover:shadow-lg transition-all"
+            >
+              <Swords className="w-10 h-10 text-purple-400 mb-4" />
+              <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
+                竞技挑战
+              </h3>
+              <p className="text-gray-400 text-sm">
+                参与实时竞赛，与全球高手一较高下
+              </p>
             </Link>
           </div>
         </motion.div>

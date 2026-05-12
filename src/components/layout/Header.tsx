@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Trophy, Swords, BookOpen, BarChart3, User, Zap, Settings, BookMarked } from 'lucide-react';
+import { Trophy, Swords, BookOpen, BarChart3, User, Zap, Settings, BookMarked, GraduationCap, Building } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -10,6 +10,7 @@ export const Header: React.FC = () => {
   
   const navItems = [
     { path: '/', label: '首页', icon: Swords },
+    { path: '/courses', label: '课程中心', icon: GraduationCap },
     { path: '/challenges', label: '题库', icon: BookMarked },
     { path: '/knowledge', label: '知识树', icon: BookOpen },
     { path: '/battle', label: '真人PK', icon: Zap },
@@ -55,6 +56,15 @@ export const Header: React.FC = () => {
           </nav>
 
           <div className="flex items-center gap-3">
+            {isAuthenticated && (
+              <Link
+                to="/enterprise"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 transition-all duration-300"
+              >
+                <Building className="w-5 h-5" />
+                <span className="hidden sm:inline">企业后台</span>
+              </Link>
+            )}
             {isAuthenticated && user?.email === 'admin@admin' && (
               <Link
                 to="/admin"

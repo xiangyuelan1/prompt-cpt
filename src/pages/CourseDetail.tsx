@@ -19,20 +19,20 @@ import {
 export function CourseDetailPage() {
   const { courseId } = useParams<{ courseId: string }>();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const { getCourse, startLearning, updateProgress, getProgress, generateCertificate } = useCourse();
   
   const [currentLessonId, setCurrentLessonId] = useState<string>('');
   const [showCertificate, setShowCertificate] = useState(false);
   
   const course = courseId ? getCourse(courseId) : undefined;
-  const progress = currentUser && courseId ? getProgress(courseId, currentUser.id) : undefined;
-  const certificate = showCertificate && currentUser && courseId ? generateCertificate(courseId, currentUser.id) : null;
+  const progress = user && courseId ? getProgress(courseId, user.id) : undefined;
+  const certificate = showCertificate && user && courseId ? generateCertificate(courseId, user.id) : null;
 
   useEffect(() => {
-    if (!course || !currentUser) return;
+    if (!course || !user) return;
     
-    startLearning(course.id, currentUser.id);
+    startLearning(course.id, user.id);
     
     if (progress) {
       setCurrentLessonId(progress.currentLessonId);
@@ -42,7 +42,7 @@ export function CourseDetailPage() {
         setCurrentLessonId(firstLesson.id);
       }
     }
-  }, [course, currentUser, courseId]);
+  }, [course, user, courseId]);
 
   const findLessonAndChapter = (lessonId: string) => {
     if (!course) return null;
@@ -79,8 +79,8 @@ export function CourseDetailPage() {
   };
 
   const handleLessonComplete = () => {
-    if (!currentUser || !course) return;
-    updateProgress(course.id, currentUser.id, currentLessonId);
+    if (!user || !course) return;
+    updateProgress(course.id, user.id, currentLessonId);
     
     const nextLesson = getNextLesson();
     if (nextLesson) {
@@ -131,7 +131,7 @@ export function CourseDetailPage() {
                   <p className="text-gray-300 mb-2">证书编号</p>
                   <p className="text-xl font-mono text-primary">{certificate.certificateNumber}</p>
                 </div>
-                <p className="text-white text-lg mb-2">{currentUser?.username}</p>
+                <p className="text-white text-lg mb-2">{user?.username}</p>
                 <p className="text-gray-400 mb-4">已完成</p>
                 <p className="text-xl font-semibold text-white mb-6">{certificate.courseName}</p>
                 <p className="text-gray-500 text-sm">

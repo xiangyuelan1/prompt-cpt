@@ -5,15 +5,15 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { BookOpen, Star, Users, Clock, CheckCircle, PlayCircle } from 'lucide-react';
 
 export function CoursesPage() {
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   const { courses, learningProgress } = useCourse();
 
   const featuredCourses = courses.filter(c => c.isFeatured);
   const otherCourses = courses.filter(c => !c.isFeatured);
 
   const getCourseProgress = (courseId: string) => {
-    if (!currentUser) return null;
-    const progress = learningProgress.find(p => p.courseId === courseId && p.userId === currentUser.id);
+    if (!user) return null;
+    const progress = learningProgress.find(p => p.courseId === courseId && p.userId === user.id);
     if (!progress) return null;
     return {
       progress: (progress.completedLessons.length / progress.totalLessons) * 100,

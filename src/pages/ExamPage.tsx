@@ -25,7 +25,7 @@ const sampleExams = [
     questions: [
       {
         id: 'q1',
-        type: 'single-choice',
+        type: 'single-choice' as const,
         question: '什么是提示词工程？',
         options: [
           '一门编程语言',
@@ -38,7 +38,7 @@ const sampleExams = [
       },
       {
         id: 'q2',
-        type: 'single-choice',
+        type: 'single-choice' as const,
         question: '以下哪个不是好的提示词应包含的要素？',
         options: [
           '清晰的任务描述',
@@ -51,7 +51,7 @@ const sampleExams = [
       },
       {
         id: 'q3',
-        type: 'multi-choice',
+        type: 'multi-choice' as const,
         question: '提示词工程中常用的技巧有哪些？（多选）',
         options: [
           '思维链提示法',
@@ -64,7 +64,7 @@ const sampleExams = [
       },
       {
         id: 'q4',
-        type: 'single-choice',
+        type: 'single-choice' as const,
         question: '思维链提示法的主要作用是什么？',
         options: [
           '让AI回复更快',
@@ -77,7 +77,7 @@ const sampleExams = [
       },
       {
         id: 'q5',
-        type: 'single-choice',
+        type: 'single-choice' as const,
         question: '小样本学习是指什么？',
         options: [
           '用很少的数据训练AI模型',
@@ -97,7 +97,7 @@ type ExamState = 'intro' | 'in-progress' | 'completed';
 export function ExamPage() {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { user } = useAuth();
   
   const [examState, setExamState] = useState<ExamState>('intro');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -140,11 +140,13 @@ export function ExamPage() {
           correct++;
         }
       } else if (question.type === 'multi-choice') {
-        const isCorrect = Array.isArray(userAnswer) && 
-          userAnswer.length === question.correctAnswer.length &&
-          userAnswer.every(a => question.correctAnswer.includes(a));
-        if (isCorrect) {
-          correct++;
+        if (Array.isArray(userAnswer) && Array.isArray(question.correctAnswer)) {
+          const isCorrect = 
+            userAnswer.length === question.correctAnswer.length &&
+            userAnswer.every(a => question.correctAnswer.includes(a));
+          if (isCorrect) {
+            correct++;
+          }
         }
       }
     });
@@ -400,9 +402,11 @@ export function ExamPage() {
             if (question.type === 'single-choice') {
               isCorrect = userAnswer === question.correctAnswer;
             } else if (question.type === 'multi-choice') {
-              isCorrect = Array.isArray(userAnswer) && 
-                userAnswer.length === question.correctAnswer.length &&
-                userAnswer.every(a => question.correctAnswer.includes(a));
+              if (Array.isArray(userAnswer) && Array.isArray(question.correctAnswer)) {
+                isCorrect = 
+                  userAnswer.length === question.correctAnswer.length &&
+                  userAnswer.every(a => question.correctAnswer.includes(a));
+              }
             }
 
             return (
